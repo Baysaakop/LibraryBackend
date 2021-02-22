@@ -1,21 +1,11 @@
+from datetime import datetime
 from django.db import models
 from django.contrib.auth.models import User
+from users.models import Profile
 
 def item_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/items/<id>/<filename> 
     return 'items/{0}/{1}'.format(instance.id, filename) 
-
-class Item(models.Model):
-    name = models.CharField(max_length=50)
-    description = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to=item_directory_path, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="item_created_by")
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="item_updated_by")
-
-    def __str__(self):
-        return self.name
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -63,8 +53,8 @@ class Book(models.Model):
     width = models.IntegerField(default=0)
     depth = models.IntegerField(default=0)
     weight = models.IntegerField(default=0)
-    count = models.IntegerField(default=0)
-    available = models.IntegerField(default=0)
+    count = models.IntegerField(default=1)
+    available = models.IntegerField(default=1)
     price = models.IntegerField(default=0)
     image = models.ImageField(upload_to=item_directory_path, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)    
@@ -73,32 +63,56 @@ class Book(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="book_updated_by")
     
     def __str__(self):
-        return self.name
-
-class Customer(models.Model):
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=50)
-    mobile = models.CharField(max_length=50)
-    birthday = models.DateField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="customer_created_by")
-    updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="customer_updated_by")
-    
-    def __str__(self):
-        return self.name  
+        return self.name    
 
 class Order(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_customer")
+    customer = models.ForeignKey(Profile, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_customer")
     book = models.ForeignKey(Book, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_book")
     description = models.TextField(blank=True, null=True)
     count = models.IntegerField(default=1)
     day = models.IntegerField(default=7)
+    returned = models.BooleanField(default=False)
+    returned_at = models.DateTimeField(blank=True, null=True)    
     created_at = models.DateTimeField(auto_now_add=True)    
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_created_by")    
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_updated_by")
     
     def __str__(self):
-        return str(self.id)
+        return self.customer.code + "->" + self.book.name
+
+    # def save(self, *args, **kwargs):         
+    #     if self.returned == True:
+    #         self.returned_at=datetime.now()
+    #         self.book.available=self.book.available+1
+    #     else:
+    #         self.book.available=self.book.available-1
+    #     super(Order, self).save(*args, **kwargs) 
+
+class VoteOption(models.Model):
+    name = models.CharField(max_length=100)    
+    count = models.IntegerField(default=0)
+    # valid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="vote_option_created_by")    
+    
+    def __str__(self):
+        return self.name 
+
+class Vote(models.Model):
+    customer = models.ForeignKey(User, on_delete=models.CASCADE)
+    selections = models.ManyToManyField(VoteOption, blank=True)        
+    created_at = models.DateTimeField(auto_now_add=True)    
+    updated_at = models.DateTimeField(auto_now=True)    
+    
+    def __str__(self):
+        return self.customer.username
+
+class VoteSelect(models.Model):
+    options = models.ManyToManyField(VoteOption, blank=True)
+    votes = models.ManyToManyField(Vote, blank=True)    
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="vote_select_created_by")    
+    
+    def __str__(self):
+        return "Vote: " + str(self.created_at)
