@@ -229,11 +229,10 @@ class VoteViewSet(viewsets.ModelViewSet):
         vote = Vote.objects.create(                 
             customer=user            
         )                  
-        # if option in request.data:
-        #     arr = str(request.data['option']).split(',')
-        #     for item in arr:
         vote.selections.add(option)                            
         vote.save()
+        option.count=option.count+1
+        option.save()
         select = VoteSelect.objects.latest('created_at')                   
         select.votes.add(vote)
         serializer = VoteSerializer(vote)
@@ -244,17 +243,15 @@ class VoteViewSet(viewsets.ModelViewSet):
         vote = self.get_object()                 
         user = Token.objects.get(key=request.data['token']).user   
         option = VoteOption.objects.get(id=int(request.data['option']))
-        if option in vote.selections:
+        if option in vote.selections.all():
             vote.selections.remove(option)
+            option.count=option.count-1
         else:
             vote.selections.add(option)
-        # vote.sele
-        # if 'options' in request.data:
-        #     arr = str(request.data['options']).split(',')
-        #     for item in arr:
-        #         vote.selections.add(int(item))   
+            option.count=option.count+1
         vote.save()
-        serializer = OrderSerializer(vote)
+        option.save()
+        serializer = VoteSerializer(vote)
         headers = self.get_success_headers(serializer.data)        
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
