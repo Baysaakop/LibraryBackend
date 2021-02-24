@@ -14,7 +14,7 @@ SECRET_KEY = 'c^-*o(i9ky+-^+=3ll1%%xang(f#c(!%$ummqykw)8v#&iws!)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'otlibraryback.herokuapp.com']
 
 
 # Application definition
@@ -137,7 +137,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 24,
+    'PAGE_SIZE': 40,
 }
 
 REST_AUTH_SERIALIZERS = {
