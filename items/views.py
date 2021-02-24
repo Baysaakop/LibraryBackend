@@ -42,9 +42,10 @@ def isUndefined(data):
 
 class BookViewSet(viewsets.ModelViewSet):
     serializer_class = BookSerializer
-    queryset = Book.objects.all().order_by('-created_at')
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name', 'category__id']    
+    queryset = Book.objects.all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'category__id']
+    ordering_fields = ['created_at', 'name', 'orders']      
 
     def create(self, request, *args, **kwargs):                       
         user = Token.objects.get(key=request.data['token']).user   
@@ -158,6 +159,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             order.count=request.data['count']            
         if (book.available > 0):            
             book.available=book.available-order.count
+            book.orders=book.orders+1
             book.save()
         else:
             return Response("Not available", status=status.HTTP_406_NOT_ACCEPTABLE)

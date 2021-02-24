@@ -56,6 +56,7 @@ class Book(models.Model):
     count = models.IntegerField(default=1)
     available = models.IntegerField(default=1)
     price = models.IntegerField(default=0)
+    orders = models.IntegerField(default=0)
     image = models.ImageField(upload_to=item_directory_path, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)    
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="book_created_by")    
