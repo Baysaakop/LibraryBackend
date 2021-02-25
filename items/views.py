@@ -46,6 +46,7 @@ class BookViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'category__id']
     ordering_fields = ['created_at', 'name', 'orders']      
+    ordering = ['-created_at']
 
     def create(self, request, *args, **kwargs):                       
         user = Token.objects.get(key=request.data['token']).user   
