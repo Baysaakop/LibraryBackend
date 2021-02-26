@@ -23,6 +23,7 @@ class Profile(models.Model):
     birthday = models.DateField(null=True, blank=True)
     avatar = models.ImageField(upload_to=user_directory_path, null=True, blank=True)
     role = models.CharField(max_length=20, choices=USER_ROLES, default="3")
+    verified = models.BooleanField(default=False, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -33,6 +34,6 @@ class Profile(models.Model):
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):    
     if created:
-        profile, added = Profile.objects.get_or_create(code=instance.username)
+        profile, added = Profile.objects.get_or_create(code=instance.username, first_name=instance.first_name, last_name=instance.last_name)
         profile.user=instance
     instance.profile.save()
