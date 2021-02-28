@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, ResetRequest
 from allauth.account import app_settings as allauth_settings
 from allauth.utils import get_username_max_length
 from allauth.account.utils import setup_user_email
@@ -21,6 +21,13 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'username', 'first_name', 'last_name', 'profile'
+        )
+
+class ResetRequestSerializer(serializers.ModelSerializer):    
+    class Meta:
+        model = ResetRequest
+        fields = (
+            'id', 'code', 'created_at', 'updated_at'
         )
 
 class RegisterSerializer(serializers.Serializer):

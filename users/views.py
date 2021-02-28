@@ -1,8 +1,8 @@
 from datetime import datetime
 from .models import Profile
 from django.contrib.auth.models import User
-from .serializers import UserSerializer, ProfileSerializer
-from .models import Profile
+from .serializers import UserSerializer, ProfileSerializer, ResetRequestSerializer
+from .models import Profile, ResetRequest
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status, serializers, viewsets, filters
@@ -11,7 +11,43 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     queryset = User.objects.all()
     filter_backends = [filters.SearchFilter]
-    search_fields = ['username']            
+    search_fields = ['username']         
+
+class ResetRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = ResetRequestSerializer
+    queryset = ResetRequest.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['code']            
+
+    def create(self, request, *args, **kwargs):                  
+        code = request.data['code']         
+        if User.objects.filter(username=code).count() > 0:              
+            password = request.data['password']         
+            resetrequest = ResetRequest.objects.create(
+                code=code,
+                password=password
+            )
+            resetrequest.save()
+            serializer = ProfileSerializer(resetrequest)
+            headers = self.get_success_headers(serializer.data)        
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers) 
+        else:
+            return Response(data="User not found", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    def update(self, request, *args, **kwargs):                         
+        resetrequest = self.get_object()          
+        if 'approved' in request.data:
+            if request.data['approved'] == "True":
+                user = User.objects.get(username=resetrequest.code)       
+                user.set_password(resetrequest.password)
+                user.save()
+                resetrequest.delete()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                resetrequest.delete()
+                return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_200_OK)
 
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
@@ -19,8 +55,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['code', 'verified']            
 
-    def create(self, request, *args, **kwargs):                       
-        user = Token.objects.get(key=request.data['token']).user   
+    def create(self, request, *args, **kwargs):                               
         code = request.data['code']         
         if Profile.objects.filter(code=code).count() > 0:                    
             return Response(data="Хэрэглэгч аль хэдийн бүртгэлтэй байна.", status=status.HTTP_409_CONFLICT)
@@ -38,8 +73,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)    
 
     def update(self, request, *args, **kwargs):                         
-        profile = self.get_object()                 
-        user = Token.objects.get(key=request.data['token']).user            
+        profile = self.get_object()                          
         if 'role' in request.data:
             profile.role=request.data['role']                            
         if 'first_name' in request.data:
@@ -51,9 +85,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if 'verified' in request.data:
             if request.data['verified'] == 'True':
                 profile.verified = True
-        # if 'birthday' in request.data:
-        #     if str(request.data['birthday']) != "":
-        #         profile.birthday=request.data['birthday']  
         if 'description' in request.data:
             profile.description=request.data['description']                
         profile.save()
